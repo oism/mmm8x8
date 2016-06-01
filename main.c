@@ -16,6 +16,7 @@
 static int get_firmwareversion(int fd);
 static int display_text(int fd, char *text);
 static int store_text(int fd, char *text);
+static int set_textspeed(int fd, char *speed);
 static int send_command(int fd, char command, int nparam,
                         unsigned char *params);
 static int receive_response(int fd, int rsplen, unsigned char *response);
@@ -36,13 +37,11 @@ int main(int argc, char **argv)
     goto EXIT;
   }
 
-#if 1
   if ((rc = open_serial(argv[1], &fd)) != RET_OK)
   {
     fprintf(stderr, "open of device %s has failed.\n", argv[1]);
     goto EXIT;
   }
-#endif
 
   if (strcmp(argv[2], "firmwareversion") == 0) 
   {
@@ -56,14 +55,16 @@ int main(int argc, char **argv)
   {
     rc = store_text(fd, argv[3]);
   }
+  else if (strcmp(argv[2], "settextspeed") == 0)
+  {
+    rc = set_textspeed(fd, argv[3]);
+  }
 
 
   rc = RET_OK;
 
 EXIT:
-#if 1
   close_serial(fd);
-#endif
   return rc;
 }
 
@@ -104,7 +105,7 @@ static int display_text(int fd, char *text)
   int textlen;
 
   textlen = strlen(text);
-  rc = send_command(fd, 'E', textlen + 1, text);
+  rc = send_command(fd, 'E', textlen, text);
 
   rc = receive_response(fd, CMD_DISPLAY_TEXT_RSP_LEN, response);
   if (rc != RET_OK) 
@@ -121,11 +122,11 @@ static int store_text(int fd, char *text)
 {
   int rc;
   #define CMD_STORE_TEXT_RSP_LEN (6)
-  unsigned char response[CMD_FIRMWARE_RSP_LEN];
+  unsigned char response[CMD_STORE_TEXT_RSP_LEN];
   int textlen;
 
   textlen = strlen(text);
-  rc = send_command(fd, 'J', textlen + 1, text);
+  rc = send_command(fd, 'J', textlen, text);
 
   rc = receive_response(fd, CMD_STORE_TEXT_RSP_LEN, response);
   if (rc != RET_OK) 
@@ -136,6 +137,29 @@ static int store_text(int fd, char *text)
 EXIT:
   return rc;
 }
+
+
+static int set_textspeed(int fd, char *speed)
+{
+  int rc;
+  #define CMD_SET_TEXTSPEED_RSP_LEN (6)
+  unsigned char response[CMD_SET_TEXTSPEED_RSP_LEN];
+  unsigned char myspeed[1];
+  
+  myspeed[0] = 44;
+  rc = send_command(fd, 'F', 1, myspeed);
+
+  rc = receive_response(fd, CMD_SET_TEXTSPEED_RSP_LEN, response);
+  if (rc != RET_OK) 
+  {
+    goto EXIT;
+  }
+
+EXIT:
+  return rc;
+}
+
+
 static int send_command(int fd, char command, int nparam, unsigned char *params)
 {
   int rc;
@@ -145,6 +169,9 @@ static int send_command(int fd, char command, int nparam, unsigned char *params)
   unsigned char length_low;
   unsigned short crc16;
   int i;
+  unsigned char escape;
+
+  escape = 0x10;
 
   /* write start frame character */
   frame_start = 0x02;
@@ -167,6 +194,15 @@ static int send_command(int fd, char command, int nparam, unsigned char *params)
   crc16 = calc_crc16(crc16, length_high);
   
   length_low = 1 + nparam;
+
+  /* escape STX */
+  if (length_low == 2)
+  {
+    rc = write(fd, &escape, 1);
+    crc16 = calc_crc16(crc16, escape);
+    length_low = 0x82;
+  }
+
   rc = write(fd, &length_low, 1);
   if (rc != 1)
   {
@@ -228,7 +264,9 @@ static int receive_response(int fd, int rsplen, unsigned char *response)
   {
     do
     {
+//printf("read: nread = %d\n", nread);
       rc = read(fd, pos, nread);
+//printf("read: rc = %d, errno = %d\n", rc, errno);
       if (rc != -1) 
       {
         pos = pos + rc;
@@ -326,4 +364,5 @@ static void usage(void)
   fprintf(stderr, "Usage: mmm8x8 <serial device> firmwareversion\n");
   fprintf(stderr, "       mmm8x8 <serial device> displaytext <text>\n");
   fprintf(stderr, "       mmm8x8 <serial device> storetext <text>\n");
+  fprintf(stderr, "       mmm8x8 <serial device> settextspeed <speed>\n");
 }
