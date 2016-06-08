@@ -1,5 +1,6 @@
 #define CRC16_SRC 1
 #include <crc16.h>
+#undef CRC16_SRC
 
 unsigned short calc_crc16(unsigned short initial, unsigned char value)
 {

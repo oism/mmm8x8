@@ -6,6 +6,7 @@
 #include <string.h>
 #include <errno.h>
 
+#include <serial.h>
 #include <crc16.h>
 
 /* local constants */
@@ -35,9 +36,6 @@ static int set_textspeed(int fd, int myargc, char **myargv);
 static int send_command(int fd, char command, int nparam,
                         unsigned char *params);
 static int receive_response(int fd, int rsplen, unsigned char *response);
-
-static int open_serial(char *serialport, int *fd);
-static int close_serial(int fd);
 
 static int find_command(int nargs, char *command);
 static void print_usage(void);
@@ -77,7 +75,7 @@ int main(int argc, char **argv)
     goto EXIT;
   }
 
-  if ((rc = open_serial(argv[1], &fd)) != RET_OK)
+  if ((rc = open_serial(argv[1], &fd)) != RET_SERIAL_OK)
   {
     fprintf(stderr, "open of device %s has failed.\n", argv[1]);
     goto EXIT;
@@ -319,65 +317,6 @@ static int receive_response(int fd, int rsplen, unsigned char *response)
 
 EXIT:
   return rc;
-}
-
-
-static int open_serial(char *serialport, int *fd)
-{
-  int rc;
-  struct termios options;
-
-  if ((*fd = open(serialport, O_RDWR | O_NOCTTY | O_NDELAY)) == -1)
-  {
-    rc = RET_ERR_OPEN;
-    goto EXIT;
-  }
-
-  /* now set 38400,8,N,1 */
-  /* get the current settings of the serial port */
-  tcgetattr(*fd, &options);
-
-  /* set the read and write speed to 38400 BAUD */
-  cfsetispeed(&options, B38400);
-  cfsetospeed(&options, B38400);
-
-  /* disable the parity bit */
-  options.c_cflag &= ~PARENB;
-
-  /* only one stop bit */
-  options.c_cflag &= ~CSTOPB;
-
-  /* 8-bits */
-  options.c_cflag &= ~CSIZE;
-  options.c_cflag |= CS8;
-
-  /* enable the receiver and set local mode */
-  options.c_cflag |= (CLOCAL | CREAD);
-
-  /* choosing raw input */
-  options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
-
-  /* choosing raw output */
-  options.c_oflag &= ~OPOST;
- 
-  /* now set the settings */
-  if(tcsetattr(*fd, TCSANOW, &options) == -1)
-  {
-    close(*fd);
-    rc = RET_ERR_SETATTR;
-    goto EXIT;
-  }
-
-  rc = RET_OK;
-
-EXIT:
-  return rc;
-}
-
-
-static int close_serial(int fd)
-{
-  close(fd);
 }
 
 
