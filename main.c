@@ -7,6 +7,7 @@
 #include <errno.h>
 
 #include <serial.h>
+#include <pattern.h>
 #include <crc16.h>
 
 /* local constants */
@@ -32,6 +33,7 @@ static int get_firmwareversion(int fd, int myargc, char **myargv);
 static int display_text(int fd, int myargc, char **myargv);
 static int store_text(int fd, int myargc, char **myargv);
 static int set_textspeed(int fd, int myargc, char **myargv);
+static int display_pattern(int fd, int myargc, char **myargv);
 
 static int send_command(int fd, char command, int nparam,
                         unsigned char *params);
@@ -50,6 +52,7 @@ static CMD cmd_table[] =
   { "displaytext",     1,     display_text },
   { "storetext",       1,     store_text },
   { "settextspeed",    1,     set_textspeed },
+  { "displaypattern",  1,     display_pattern },
 };
 
 
@@ -78,7 +81,7 @@ int main(int argc, char **argv)
   if ((rc = open_serial(argv[1], &fd)) != RET_SERIAL_OK)
   {
     fprintf(stderr, "open of device %s has failed.\n", argv[1]);
-    goto EXIT;
+  //  goto EXIT;
   }
  
   rc = cmd_table[cmd].cmd_fct(fd, argc - 3, &argv[3]);
@@ -96,7 +99,6 @@ static int get_firmwareversion(int fd, int myargc, char **myargv)
   #define CMD_FIRMWARE_RSP_LEN (12)
   unsigned char response[CMD_FIRMWARE_RSP_LEN];
 
-printf("argc = %d\n", myargc);
   rc = send_command(fd, 'v', 0, NULL);
   if (rc != RET_OK) 
   {
@@ -176,6 +178,30 @@ static int set_textspeed(int fd, int myargc, char **myargv)
   {
     goto EXIT;
   }
+
+EXIT:
+  return rc;
+}
+
+
+static int display_pattern(int fd, int myargc, char **myargv)
+{
+  int rc;
+  FILE *patternfile;
+  unsigned char linepattern;
+  
+  if ((rc = open_patternfile(myargv[0], &patternfile)) != RET_PATTERN_OK)
+  {
+    fprintf(stderr, "open of patternfile %s has failed\n", myargv[0]);
+    goto EXIT;
+  }
+
+  while ((rc = read_patternfile(patternfile, &linepattern)) == RET_PATTERN_OK)
+  {
+    printf("%02X\n", linepattern);
+  }
+
+  close_patternfile(patternfile);
 
 EXIT:
   return rc;
@@ -348,5 +374,7 @@ static void print_usage(void)
   fprintf(stderr, "Usage: mmm8x8 <serial device> firmwareversion\n");
   fprintf(stderr, "       mmm8x8 <serial device> displaytext <text>\n");
   fprintf(stderr, "       mmm8x8 <serial device> storetext <text>\n");
-  fprintf(stderr, "       mmm8x8 <serial device> settextspeed <speed: 0-255>\n");
+  fprintf(stderr, "       mmm8x8 <serial device> settextspeed "
+                  "<speed: 0-255>\n");
+  fprintf(stderr, "       mmm8x8 <serial device> displaypattern <inputfile>\n");
 }
