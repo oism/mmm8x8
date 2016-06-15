@@ -195,8 +195,15 @@ EXIT:
 static int display_pattern(int fd, int myargc, char **myargv)
 {
   int rc;
+#define CMD_DISPLAY_PATTERN_RSP_LEN (6)
+  unsigned char response[CMD_DISPLAY_PATTERN_RSP_LEN];
   FILE *patternfile;
+  int lines;
+  int columns;
   unsigned char linepattern;
+#define LINES_PER_PATTERN (8)
+#define COLUMNS_PER_PATTERN (8)
+  unsigned char pattern[LINES_PER_PATTERN];
   
   if ((rc = open_patternfile(myargv[0], &patternfile)) != RET_PATTERN_OK)
   {
@@ -204,11 +211,39 @@ static int display_pattern(int fd, int myargc, char **myargv)
     goto EXIT;
   }
 
-  while ((rc = read_patternfile(patternfile, &linepattern)) == RET_PATTERN_OK)
+  
+  for (lines = 0; lines  < LINES_PER_PATTERN; lines++)
   {
-    printf("%02X\n", linepattern);
+    pattern[lines] = 0;
   }
 
+  for (lines = 0; lines < LINES_PER_PATTERN; lines++)
+  {
+    if ((rc = read_patternfile(patternfile, &linepattern)) != RET_PATTERN_OK)
+    {
+      fprintf(stderr, "read of patternfile %s has failed\n", myargv[0]);
+      goto CLOSE_EXIT;
+    }
+
+    for (columns = 0; columns < COLUMNS_PER_PATTERN; columns++)
+    {
+      if (linepattern & (1 << (COLUMNS_PER_PATTERN - columns - 1))) 
+      {
+        pattern[columns] = pattern[columns] | (1 << lines);
+      }
+    }
+  }
+
+  rc = send_command(fd, 'D', LINES_PER_PATTERN, pattern);
+
+  rc = receive_response(fd, response, CMD_DISPLAY_PATTERN_RSP_LEN);
+  if (rc != RET_OK) 
+  {
+    goto CLOSE_EXIT;
+  }
+  
+
+CLOSE_EXIT:
   close_patternfile(patternfile);
 
 EXIT:
