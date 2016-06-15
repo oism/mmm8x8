@@ -2,6 +2,7 @@
 #include <termios.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <errno.h>
 
 #define SERIAL_SRC 1
 #include <serial.h>
@@ -65,4 +66,42 @@ int close_serial(int fd)
   close(fd);
 
   return RET_SERIAL_OK;
+}
+
+
+
+int read_serial(int fd, unsigned char *buf, int count)
+{
+  int rc;
+  unsigned char *pos;
+  int nread;
+
+  pos = buf;
+  nread = count;
+  do 
+  {
+    do
+    {
+      rc = read(fd, pos, nread);
+      if (rc != -1) 
+      {
+        pos = pos + rc;
+        nread -= rc;
+      }
+    }
+    while ((rc != -1) && (nread > 0));
+  }
+  while ((rc == -1) && (errno == EAGAIN));
+
+  return rc;
+}
+
+
+int write_serial(int fd, unsigned char *buf, int count)
+{
+  int rc;
+
+  rc = write(fd, buf, count);
+
+  return rc;
 }

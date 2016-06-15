@@ -13,6 +13,9 @@
 
 EXTERN int open_serial(char *serialport, int *fd);
 EXTERN int close_serial(int fd);
+EXTERN int read_serial(int fd, unsigned char *buf, int count);
+EXTERN int write_serial(int fd, unsigned char *buf, int count);
+
 
 #undef EXTERN
 
