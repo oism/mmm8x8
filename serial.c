@@ -75,9 +75,11 @@ int read_serial(int fd, unsigned char *buf, int count)
   int rc;
   unsigned char *pos;
   int nread;
+  int retrycount;
 
   pos = buf;
   nread = count;
+  retrycount = 0;
   do 
   {
     do
@@ -87,11 +89,12 @@ int read_serial(int fd, unsigned char *buf, int count)
       {
         pos = pos + rc;
         nread -= rc;
+        retrycount = 0;
       }
     }
     while ((rc != -1) && (nread > 0));
   }
-  while ((rc == -1) && (errno == EAGAIN));
+  while ((rc == -1) && (errno == EAGAIN) && (retrycount++ < 1));
 
   return rc;
 }

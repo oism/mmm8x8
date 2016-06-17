@@ -8,11 +8,13 @@
 /* local constants */
 #define RET_OK                      (0)
 #define RET_ERR_USAGE               (1)
-#define RET_ERR_GET_FIRMWAREVERSION (2)
-#define RET_ERR_DISPLAY_TEXT        (3)
-#define RET_ERR_STORE_TEXT          (4)
-#define RET_ERR_SET_TEXTSPEED       (5)
-#define RET_ERR_DISPLAY_PATTERN     (6)
+#define RET_ERR_SET_NORMALMODE      (2)
+#define RET_ERR_GET_FIRMWAREVERSION (3)
+#define RET_ERR_DISPLAY_TEXT        (4)
+#define RET_ERR_STORE_TEXT          (5)
+#define RET_ERR_SET_TEXTSPEED       (6)
+#define RET_ERR_DISPLAY_PATTERN     (7)
+#define RET_ERR_STORE_PATTERN       (8)
 
 #define CMD_NOMATCH (0)
 
@@ -37,10 +39,12 @@ static CMD cmd_table[] =
 /*  cmd_name,          nargs, command fct,        rc */
   { "",                0,   NULL,                RET_ERR_USAGE },/* no match */
   { "firmwareversion", 0,   get_firmwareversion, RET_ERR_GET_FIRMWAREVERSION },
+  { "setnormalmode",   0,   set_normalmode,      RET_ERR_SET_NORMALMODE },
   { "displaytext",     1,   display_text,        RET_ERR_DISPLAY_TEXT },
   { "storetext",       1,   store_text,          RET_ERR_STORE_TEXT },
   { "settextspeed",    1,   set_textspeed,       RET_ERR_SET_TEXTSPEED },
   { "displaypattern",  1,   display_pattern,     RET_ERR_DISPLAY_PATTERN },
+  { "storepattern",    1,   store_pattern,       RET_ERR_STORE_PATTERN },
 };
 
 
@@ -111,9 +115,11 @@ static int find_command(int nargs, char *command)
 static void print_usage(void)
 {
   fprintf(stderr, "Usage: mmm8x8 <serial device> firmwareversion\n");
+  fprintf(stderr, "       mmm8x8 <serial device> setnormalmode\n");
   fprintf(stderr, "       mmm8x8 <serial device> displaytext <text>\n");
   fprintf(stderr, "       mmm8x8 <serial device> storetext <text>\n");
   fprintf(stderr, "       mmm8x8 <serial device> settextspeed "
                   "<speed: 0-255>\n");
   fprintf(stderr, "       mmm8x8 <serial device> displaypattern <inputfile>\n");
+  fprintf(stderr, "       mmm8x8 <serial device> storepattern <inputfile>\n");
 }
