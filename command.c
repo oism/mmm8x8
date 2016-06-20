@@ -56,31 +56,6 @@ EXIT:
 }
 
 
-int set_normalmode(int fd, int myargc, char **myargv)
-{
-  int rc;
-  #define CMD_SET_NORMALMODE_RSP_LEN (6)
-  unsigned char response[CMD_SET_NORMALMODE_RSP_LEN];
-
-  rc = send_command(fd, 'A', 0, NULL);
-  if (rc != RET_COMMAND_OK) 
-  {
-    fprintf(stderr, "send_command with command %c has failed.\n", 'v');
-    goto EXIT;
-  }
-
-  rc = receive_response(fd, response, CMD_SET_NORMALMODE_RSP_LEN);
-  if (rc != RET_COMMAND_OK) 
-  {
-    fprintf(stderr, "receive_response with command %c has failed.\n", 'A');
-    goto EXIT;
-  }
-  
-EXIT:
-  return rc;
-}
-
-
 int display_text(int fd, int myargc, char **myargv)
 {
   int rc;
@@ -245,6 +220,81 @@ int store_pattern(int fd, int myargc, char **myargv)
 CLOSE_EXIT:
   close_patternfile(patternfile);
 
+EXIT:
+  return rc;
+}
+
+
+int set_normalmode(int fd, int myargc, char **myargv)
+{
+  int rc;
+  #define CMD_SET_NORMALMODE_RSP_LEN (6)
+  unsigned char response[CMD_SET_NORMALMODE_RSP_LEN];
+
+  rc = send_command(fd, 'A', 0, NULL);
+  if (rc != RET_COMMAND_OK) 
+  {
+    fprintf(stderr, "send_command with command %c has failed.\n", 'A');
+    goto EXIT;
+  }
+
+  rc = receive_response(fd, response, CMD_SET_NORMALMODE_RSP_LEN);
+  if (rc != RET_COMMAND_OK) 
+  {
+    fprintf(stderr, "receive_response with command %c has failed.\n", 'A');
+    goto EXIT;
+  }
+  
+EXIT:
+  return rc;
+}
+
+
+int set_textmode(int fd, int myargc, char **myargv)
+{
+  int rc;
+  #define CMD_SET_TEXTMODE_RSP_LEN (6)
+  unsigned char response[CMD_SET_TEXTMODE_RSP_LEN];
+
+  rc = send_command(fd, 'C', 0, NULL);
+  if (rc != RET_COMMAND_OK) 
+  {
+    fprintf(stderr, "send_command with command %c has failed.\n", 'C');
+    goto EXIT;
+  }
+
+  rc = receive_response(fd, response, CMD_SET_TEXTMODE_RSP_LEN);
+  if (rc != RET_COMMAND_OK) 
+  {
+    fprintf(stderr, "receive_response with command %c has failed.\n", 'C');
+    goto EXIT;
+  }
+  
+EXIT:
+  return rc;
+}
+
+
+int set_patternmode(int fd, int myargc, char **myargv)
+{
+  int rc;
+  #define CMD_SET_PATTERNMODE_RSP_LEN (6)
+  unsigned char response[CMD_SET_PATTERNMODE_RSP_LEN];
+
+  rc = send_command(fd, 'B', 0, NULL);
+  if (rc != RET_COMMAND_OK) 
+  {
+    fprintf(stderr, "send_command with command %c has failed.\n", 'B');
+    goto EXIT;
+  }
+
+  rc = receive_response(fd, response, CMD_SET_PATTERNMODE_RSP_LEN);
+  if (rc != RET_COMMAND_OK) 
+  {
+    fprintf(stderr, "receive_response with command %c has failed.\n", 'B');
+    goto EXIT;
+  }
+  
 EXIT:
   return rc;
 }
