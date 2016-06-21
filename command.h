@@ -1,8 +1,9 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 
-#define RET_COMMAND_OK       (0)
-#define RET_COMMAND_ERR_READ (1)
+#define RET_COMMAND_OK        (0)
+#define RET_COMMAND_ERR_READ  (1)
+#define RET_COMMAND_ERR_WRITE (2)
 
 #if COMMAND_SRC
 # define EXTERN 

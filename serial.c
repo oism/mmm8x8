@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <sys/select.h>
 
 #define SERIAL_SRC 1
 #include <serial.h>
@@ -75,11 +76,28 @@ int read_serial(int fd, unsigned char *buf, int count)
   int rc;
   unsigned char *pos;
   int nread;
-  int retrycount;
+  fd_set readfds;
+  struct timeval timeout;
 
+  /* check whether fd is ready to read */
+  FD_ZERO(&readfds);
+  FD_SET(fd, &readfds);
+  timeout.tv_sec = 0;
+  timeout.tv_usec = 100000;
+  rc = select(fd + 1, &readfds, NULL, NULL, &timeout);
+  if (rc == 0)
+  {
+    rc = -1;
+    goto EXIT;
+  }
+  if (rc == -1)
+  {
+    goto EXIT;
+  }
+   
+  /* now actually read */
   pos = buf;
   nread = count;
-  retrycount = 0;
   do 
   {
     do
@@ -89,13 +107,13 @@ int read_serial(int fd, unsigned char *buf, int count)
       {
         pos = pos + rc;
         nread -= rc;
-        retrycount = 0;
       }
     }
     while ((rc != -1) && (nread > 0));
   }
-  while ((rc == -1) && (errno == EAGAIN) && (retrycount++ < 1));
+  while ((rc == -1) && (errno == EAGAIN));
 
+EXIT:
   return rc;
 }
 
@@ -105,6 +123,5 @@ int write_serial(int fd, unsigned char *buf, int count)
   int rc;
 
   rc = write(fd, buf, count);
-
   return rc;
 }

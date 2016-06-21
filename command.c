@@ -1,7 +1,5 @@
 #include <stdio.h>
 #include <string.h>
-#include <errno.h>
-#include <time.h>
 
 #include <serial.h>
 #include <pattern.h>
@@ -37,14 +35,15 @@ int get_firmwareversion(int fd, int myargc, char **myargv)
   rc = send_command(fd, 'v', 0, NULL);
   if (rc != RET_COMMAND_OK) 
   {
-    fprintf(stderr, "send_command with command %c has failed.\n", 'v');
+    fprintf(stderr, "sending command firmwareversion has failed.\n");
     goto EXIT;
   }
 
   rc = receive_response(fd, response, CMD_GET_FIRMWARE_RSP_LEN);
   if (rc != RET_COMMAND_OK) 
   {
-    fprintf(stderr, "receive_response with command %c has failed.\n", 'v');
+    fprintf(stderr, "receiving response of command firmwareversion "
+                    "has failed.\n");
     goto EXIT;
   }
   
@@ -65,10 +64,17 @@ int display_text(int fd, int myargc, char **myargv)
 
   textlen = strlen(myargv[0]);
   rc = send_command(fd, 'E', textlen, myargv[0]);
+  if (rc != RET_COMMAND_OK) 
+  {
+    fprintf(stderr, "sending command displaytext has failed.\n");
+    goto EXIT;
+  }
 
   rc = receive_response(fd, response, CMD_DISPLAY_TEXT_RSP_LEN);
   if (rc != RET_COMMAND_OK) 
   {
+    fprintf(stderr, "receiving response of command displaytext "
+                    "has failed.\n");
     goto EXIT;
   }
 
@@ -86,10 +92,17 @@ int store_text(int fd, int myargc, char **myargv)
 
   textlen = strlen(myargv[0]);
   rc = send_command(fd, 'J', textlen, myargv[0]);
+  if (rc != RET_COMMAND_OK) 
+  {
+    fprintf(stderr, "sending command storetext has failed.\n");
+    goto EXIT;
+  }
 
   rc = receive_response(fd, response, CMD_STORE_TEXT_RSP_LEN);
   if (rc != RET_COMMAND_OK) 
   {
+    fprintf(stderr, "receiving response of command storetext "
+                    "has failed.\n");
     goto EXIT;
   }
 
@@ -107,10 +120,17 @@ int set_textspeed(int fd, int myargc, char **myargv)
   
   speed[0] = atoi(myargv[0]);
   rc = send_command(fd, 'F', 1, speed);
+  if (rc != RET_COMMAND_OK) 
+  {
+    fprintf(stderr, "sending command settextspeed has failed.\n");
+    goto EXIT;
+  }
 
   rc = receive_response(fd, response, CMD_SET_TEXTSPEED_RSP_LEN);
   if (rc != RET_COMMAND_OK) 
   {
+    fprintf(stderr, "receiving response of command settextspeed "
+                    "has failed.\n");
     goto EXIT;
   }
 
@@ -144,10 +164,17 @@ int display_pattern(int fd, int myargc, char **myargv)
   }
 
   rc = send_command(fd, 'D', LINES_PER_PATTERN, pattern);
+  if (rc != RET_COMMAND_OK) 
+  {
+    fprintf(stderr, "sending command displaypattern has failed.\n");
+    goto CLOSE_EXIT;
+  }
 
   rc = receive_response(fd, response, CMD_DISPLAY_PATTERN_RSP_LEN);
   if (rc != RET_COMMAND_OK) 
   {
+    fprintf(stderr, "receiving response of command displaypattern "
+                    "has failed.\n");
     goto CLOSE_EXIT;
   }
   
@@ -189,10 +216,17 @@ int store_pattern(int fd, int myargc, char **myargv)
 
   /* write first pattern */
   rc = send_command(fd, 'G', LINES_PER_PATTERN + 1, pattern);
+  if (rc != RET_COMMAND_OK) 
+  {
+    fprintf(stderr, "sending command storepattern has failed.\n");
+    goto CLOSE_EXIT;
+  }
 
   rc = receive_response(fd, response, CMD_STORE_PATTERN_RSP_LEN);
   if (rc != RET_COMMAND_OK) 
   {
+    fprintf(stderr, "receiving response of command storepattern "
+                    "has failed.\n");
     goto CLOSE_EXIT;
   }
   
@@ -208,14 +242,20 @@ int store_pattern(int fd, int myargc, char **myargv)
     /* set duration of display in multiples of 100 ms */
     pattern[LINES_PER_PATTERN] = DISPLAY_DURATION;
     rc = send_command(fd, 'I', LINES_PER_PATTERN + 1, pattern);
+    if (rc != RET_COMMAND_OK) 
+    {
+      fprintf(stderr, "sending command storepattern has failed.\n");
+      goto CLOSE_EXIT;
+    }
 
     rc = receive_response(fd, response, CMD_STORE_PATTERN_RSP_LEN);
     if (rc != RET_COMMAND_OK) 
     {
+      fprintf(stderr, "receiving response of command storepattern "
+                      "has failed.\n");
       goto CLOSE_EXIT;
     }
   }
-
 
 CLOSE_EXIT:
   close_patternfile(patternfile);
@@ -234,14 +274,15 @@ int set_normalmode(int fd, int myargc, char **myargv)
   rc = send_command(fd, 'A', 0, NULL);
   if (rc != RET_COMMAND_OK) 
   {
-    fprintf(stderr, "send_command with command %c has failed.\n", 'A');
+    fprintf(stderr, "sending command setnormalmode has failed.\n");
     goto EXIT;
   }
 
   rc = receive_response(fd, response, CMD_SET_NORMALMODE_RSP_LEN);
   if (rc != RET_COMMAND_OK) 
   {
-    fprintf(stderr, "receive_response with command %c has failed.\n", 'A');
+    fprintf(stderr, "receiving response of command setnormalmode "
+                    "has failed.\n");
     goto EXIT;
   }
   
@@ -259,14 +300,15 @@ int set_textmode(int fd, int myargc, char **myargv)
   rc = send_command(fd, 'C', 0, NULL);
   if (rc != RET_COMMAND_OK) 
   {
-    fprintf(stderr, "send_command with command %c has failed.\n", 'C');
+    fprintf(stderr, "sending command settextmode has failed.\n");
     goto EXIT;
   }
 
   rc = receive_response(fd, response, CMD_SET_TEXTMODE_RSP_LEN);
   if (rc != RET_COMMAND_OK) 
   {
-    fprintf(stderr, "receive_response with command %c has failed.\n", 'C');
+    fprintf(stderr, "receiving response of command settextmode "
+                    "has failed.\n");
     goto EXIT;
   }
   
@@ -284,14 +326,15 @@ int set_patternmode(int fd, int myargc, char **myargv)
   rc = send_command(fd, 'B', 0, NULL);
   if (rc != RET_COMMAND_OK) 
   {
-    fprintf(stderr, "send_command with command %c has failed.\n", 'B');
+    fprintf(stderr, "sending command setpatternmode has failed.\n");
     goto EXIT;
   }
 
   rc = receive_response(fd, response, CMD_SET_PATTERNMODE_RSP_LEN);
   if (rc != RET_COMMAND_OK) 
   {
-    fprintf(stderr, "receive_response with command %c has failed.\n", 'B');
+    fprintf(stderr, "receiving response of command setpatternmode "
+                    "has failed.\n");
     goto EXIT;
   }
   
@@ -309,7 +352,6 @@ static int send_command(int fd, char command, int nparam, unsigned char *params)
   unsigned short crc16;
   int i;
   unsigned char escape;
-  struct timespec duration;
 
   /* set initial value for crc16 computation */
   crc16 = INITIAL_VALUE;
@@ -318,7 +360,7 @@ static int send_command(int fd, char command, int nparam, unsigned char *params)
   rc = write_and_crc_byte(fd, STX, &crc16);
   if (rc != 1)
   {
-    fprintf(stderr, "write failed, errno = %d\n", errno);
+    rc = RET_COMMAND_ERR_WRITE;
     goto EXIT;
   }
 
@@ -327,7 +369,7 @@ static int send_command(int fd, char command, int nparam, unsigned char *params)
   rc = write_serial_with_escape(fd, length_high, &crc16);
   if (rc != 1)
   {
-    fprintf(stderr, "write failed, errno = %d\n", errno);
+    rc = RET_COMMAND_ERR_WRITE;
     goto EXIT;
   }
   
@@ -335,7 +377,7 @@ static int send_command(int fd, char command, int nparam, unsigned char *params)
   rc = write_serial_with_escape(fd, length_low, &crc16);
   if (rc != 1)
   {
-    fprintf(stderr, "write failed, errno = %d\n", errno);
+    rc = RET_COMMAND_ERR_WRITE;
     goto EXIT;
   }
 
@@ -343,7 +385,7 @@ static int send_command(int fd, char command, int nparam, unsigned char *params)
   rc = write_serial_with_escape(fd, command, &crc16);
   if (rc != 1)
   {
-    fprintf(stderr, "write failed, errno = %d\n", errno);
+    rc = RET_COMMAND_ERR_WRITE;
     goto EXIT;
   }
 
@@ -355,7 +397,7 @@ static int send_command(int fd, char command, int nparam, unsigned char *params)
       rc = write_serial_with_escape(fd, params[i], &crc16);
       if (rc != 1)
       {
-        fprintf(stderr, "write failed, errno = %d\n", errno);
+        rc = RET_COMMAND_ERR_WRITE;
         goto EXIT;
       }
     }
@@ -367,13 +409,9 @@ static int send_command(int fd, char command, int nparam, unsigned char *params)
   rc = write_serial(fd, checksum, 2); 
   if (rc != 2)
   {
-    fprintf(stderr, "write failed, errno = %d\n", errno);
+    rc = RET_COMMAND_ERR_WRITE;
     goto EXIT;
   }
-
-  duration.tv_sec = 0;
-  duration.tv_nsec = 100000000;
-  nanosleep(&duration, NULL);
 
   rc = RET_COMMAND_OK;
 
@@ -438,7 +476,7 @@ static int receive_response(int fd, unsigned char *response, int rsplen)
   rc = read_serial(fd, response, rsplen);
   if (rc == -1)
   {
-    fprintf(stderr, "read failed, rc = %d, errno = %d\n", rc, errno);
+    rc = RET_COMMAND_ERR_READ;
     goto EXIT;
   }
   else
