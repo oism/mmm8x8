@@ -12,15 +12,15 @@
 #endif
 
 
-EXTERN int get_firmwareversion(int fd, int myargc, char **myargv);
-EXTERN int display_text(int fd, int myargc, char **myargv);
-EXTERN int store_text(int fd, int myargc, char **myargv);
-EXTERN int set_textspeed(int fd, int myargc, char **myargv);
-EXTERN int display_pattern(int fd, int myargc, char **myargv);
-EXTERN int store_pattern(int fd, int myargc, char **myargv);
-EXTERN int set_normalmode(int fd, int myargc, char **myargv);
-EXTERN int set_textmode(int fd, int myargc, char **myargv);
-EXTERN int set_patternmode(int fd, int myargc, char **myargv);
+EXTERN int get_firmwareversion(SERHDL hdl, int myargc, char **myargv);
+EXTERN int display_text(SERHDL hdl, int myargc, char **myargv);
+EXTERN int store_text(SERHDL hdl, int myargc, char **myargv);
+EXTERN int set_textspeed(SERHDL hdl, int myargc, char **myargv);
+EXTERN int display_pattern(SERHDL hdl, int myargc, char **myargv);
+EXTERN int store_pattern(SERHDL hdl, int myargc, char **myargv);
+EXTERN int set_normalmode(SERHDL hdl, int myargc, char **myargv);
+EXTERN int set_textmode(SERHDL hdl, int myargc, char **myargv);
+EXTERN int set_patternmode(SERHDL hdl, int myargc, char **myargv);
 
 #undef EXTERN
 

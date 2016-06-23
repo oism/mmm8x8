@@ -21,7 +21,7 @@
 #define CMD_NOMATCH (0)
 
 /* local types */
-typedef int (*CMD_FCT)(int fd, int myargc, char **myargv);
+typedef int (*CMD_FCT)(SERHDL hdl, int myargc, char **myargv);
 
 typedef struct {
   char   *cmd_name;       /* name as typed on the command line */
@@ -57,7 +57,7 @@ int main(int argc, char **argv)
 {
   int rc;
   int cmd;
-  int fd;
+  SERHDL hdl;
 
   if (argc < 3)
   {
@@ -74,19 +74,19 @@ int main(int argc, char **argv)
     goto EXIT;
   }
 
-  if ((rc = open_serial(argv[1], &fd)) != RET_SERIAL_OK)
+  if ((rc = open_serial(argv[1], &hdl)) != RET_SERIAL_OK)
   {
     fprintf(stderr, "open of device %s has failed.\n", argv[1]);
     goto EXIT;
   }
  
-  rc = cmd_table[cmd].cmd_fct(fd, argc - 3, &argv[3]);
+  rc = cmd_table[cmd].cmd_fct(hdl, argc - 3, &argv[3]);
   if (rc != RET_OK)
   {
     rc = cmd_table[cmd].cmd_rc;
   }
 
-  close_serial(fd);
+  close_serial(hdl);
 
 EXIT:
   return rc;

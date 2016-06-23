@@ -11,10 +11,16 @@
 # define EXTERN extern
 #endif
 
-EXTERN int open_serial(char *serialport, int *fd);
-EXTERN int close_serial(int fd);
-EXTERN int read_serial(int fd, unsigned char *buf, int count);
-EXTERN int write_serial(int fd, unsigned char *buf, int count);
+#if LINUX
+typedef int SERHDL;
+#else
+typedef HANDLE SERHDL;
+#endif
+
+EXTERN int open_serial(char *serialport, SERHDL *hdl);
+EXTERN int close_serial(SERHDL hdl);
+EXTERN int read_serial(SERHDL hdl, unsigned char *buf, int count);
+EXTERN int write_serial(SERHDL hdl, unsigned char *buf, int count);
 
 
 #undef EXTERN

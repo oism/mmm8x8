@@ -9,12 +9,12 @@
 #include <serial.h>
 #undef SERIAL_SRC
 
-int open_serial(char *serialport, int *fd)
+int open_serial(char *serialport, SERHDL *hdl)
 {
   int rc;
   struct termios options;
 
-  if ((*fd = open(serialport, O_RDWR | O_NOCTTY | O_NDELAY)) == -1)
+  if ((*hdl = open(serialport, O_RDWR | O_NOCTTY | O_NDELAY)) == -1)
   {
     rc = RET_SERIAL_ERR_OPEN;
     goto EXIT;
@@ -22,7 +22,7 @@ int open_serial(char *serialport, int *fd)
 
   /* now set 38400,8,N,1 */
   /* get the current settings of the serial port */
-  tcgetattr(*fd, &options);
+  tcgetattr(*hdl, &options);
 
   /* set the read and write speed to 38400 BAUD */
   cfsetispeed(&options, B38400);
@@ -48,9 +48,9 @@ int open_serial(char *serialport, int *fd)
   options.c_oflag &= ~OPOST;
  
   /* now set the settings */
-  if(tcsetattr(*fd, TCSANOW, &options) == -1)
+  if(tcsetattr(*hdl, TCSANOW, &options) == -1)
   {
-    close(*fd);
+    close(*hdl);
     rc = RET_SERIAL_ERR_SETATTR;
     goto EXIT;
   }
@@ -62,16 +62,16 @@ EXIT:
 }
 
 
-int close_serial(int fd)
+int close_serial(SERHDL hdl)
 {
-  close(fd);
+  close(hdl);
 
   return RET_SERIAL_OK;
 }
 
 
 
-int read_serial(int fd, unsigned char *buf, int count)
+int read_serial(SERHDL hdl, unsigned char *buf, int count)
 {
   int rc;
   unsigned char *pos;
@@ -79,12 +79,12 @@ int read_serial(int fd, unsigned char *buf, int count)
   fd_set readfds;
   struct timeval timeout;
 
-  /* check whether fd is ready to read */
+  /* check whether hdl is ready to read */
   FD_ZERO(&readfds);
-  FD_SET(fd, &readfds);
+  FD_SET(hdl, &readfds);
   timeout.tv_sec = 0;
   timeout.tv_usec = 100000;
-  rc = select(fd + 1, &readfds, NULL, NULL, &timeout);
+  rc = select(hdl + 1, &readfds, NULL, NULL, &timeout);
   if (rc == 0)
   {
     rc = -1;
@@ -102,7 +102,7 @@ int read_serial(int fd, unsigned char *buf, int count)
   {
     do
     {
-      rc = read(fd, pos, nread);
+      rc = read(hdl, pos, nread);
       if (rc != -1) 
       {
         pos = pos + rc;
@@ -118,10 +118,10 @@ EXIT:
 }
 
 
-int write_serial(int fd, unsigned char *buf, int count)
+int write_serial(SERHDL hdl, unsigned char *buf, int count)
 {
   int rc;
 
-  rc = write(fd, buf, count);
+  rc = write(hdl, buf, count);
   return rc;
 }
