@@ -1,13 +1,22 @@
 #include <stdio.h>
-#include <termios.h>
 #include <stdlib.h>
 #include <fcntl.h>
-#include <errno.h>
-#include <sys/select.h>
+
+#if LINUX
+#  include <termios.h>
+#  include <sys/select.h>
+#  include <errno.h>
+#endif
+
+#if WIN
+#  include <windows.h>
+#endif
 
 #define SERIAL_SRC 1
 #include <serial.h>
 #undef SERIAL_SRC
+
+#if LINUX
 
 int open_serial(char *serialport, SERHDL *hdl)
 {
@@ -125,3 +134,124 @@ int write_serial(SERHDL hdl, unsigned char *buf, int count)
   rc = write(hdl, buf, count);
   return rc;
 }
+
+#endif /* LINUX */
+
+#if WIN
+
+int open_serial(char *serialport, SERHDL *hdl)
+{
+  int rc;
+  DCB dcb;
+  COMMTIMEOUTS timeouts;
+
+  if ((*hdl = CreateFile(serialport, GENERIC_READ|GENERIC_WRITE, 0, NULL,
+                         OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL)) ==
+      INVALID_HANDLE_VALUE)
+  {
+    rc = RET_SERIAL_ERR_OPEN;
+    goto EXIT;
+  }
+ 
+  /* now set 38400,8,N,1 */
+  /* get the current settings of the serial port */
+  dcb.DCBlength = sizeof(dcb);
+  if (GetCommState(*hdl, &dcb) == 0)
+  {
+    CloseHandle(*hdl);
+    rc = RET_SERIAL_ERR_SETATTR;
+    goto EXIT;
+  }
+
+  dcb.BaudRate = CBR_38400;
+  dcb.ByteSize = 8;
+  dcb.Parity = NOPARITY;
+  dcb.StopBits = ONESTOPBIT;
+  if (SetCommState(*hdl, &dcb) == 0)
+  {
+    CloseHandle(*hdl);
+    rc = RET_SERIAL_ERR_SETATTR;
+    goto EXIT;
+  }
+
+  // Set COM port timeout settings
+  timeouts.ReadIntervalTimeout = 50;
+  timeouts.ReadTotalTimeoutConstant = 50;
+  timeouts.ReadTotalTimeoutMultiplier = 10;
+  timeouts.WriteTotalTimeoutConstant = 50;
+  timeouts.WriteTotalTimeoutMultiplier = 10;
+  if(SetCommTimeouts(*hdl, &timeouts) == 0)
+  {
+    CloseHandle(*hdl);
+    rc = RET_SERIAL_ERR_SETATTR;
+    goto EXIT;
+  }
+
+  rc = RET_SERIAL_OK;
+
+EXIT:
+  return rc;
+}
+
+
+int close_serial(SERHDL hdl)
+{
+  int rc;
+
+  CloseHandle(hdl);
+
+  rc = RET_SERIAL_OK;
+  return rc;
+}
+
+
+int read_serial(SERHDL hdl, unsigned char *buf, int count)
+{
+  int rc;
+  DWORD ntoread;
+  DWORD nread;
+
+  ntoread = count;
+  nread = 0;
+  while (ntoread - nread)
+  {
+    if (ReadFile(hdl, buf + nread, ntoread, &nread, NULL) == FALSE)
+    {
+      rc = -1;
+      goto EXIT;
+    }
+    ntoread -= nread;
+  }
+  
+  rc = count;
+
+EXIT:
+  return rc;
+}
+
+
+int write_serial(SERHDL hdl, unsigned char *buf, int count)
+{
+  int rc;
+  DWORD ntowrite;
+  DWORD nwritten;
+
+  ntowrite = count;
+  nwritten = 0;
+  while (ntowrite - nwritten)
+  {
+    if (WriteFile(hdl, buf + nwritten, ntowrite, &nwritten, NULL) == FALSE)
+    {
+      rc = -1;
+      goto EXIT;
+    }
+    ntowrite -= nwritten;
+  }
+  
+  rc = count;
+
+EXIT:
+  return rc;
+}
+
+#endif /* WIN */
