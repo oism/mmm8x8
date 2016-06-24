@@ -146,7 +146,7 @@ int open_serial(char *serialport, SERHDL *hdl)
   COMMTIMEOUTS timeouts;
 
   if ((*hdl = CreateFile(serialport, GENERIC_READ|GENERIC_WRITE, 0, NULL,
-                         OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL)) ==
+                         OPEN_EXISTING, 0, NULL)) ==
       INVALID_HANDLE_VALUE)
   {
     rc = RET_SERIAL_ERR_OPEN;
@@ -210,6 +210,22 @@ int read_serial(SERHDL hdl, unsigned char *buf, int count)
   int rc;
   DWORD ntoread;
   DWORD nread;
+  DWORD dwEventMask;
+
+  if (SetCommMask(hdl, EV_RXCHAR) == FALSE)
+  {
+    fprintf(stderr, "SetCommMask has failed, error = %d\n", GetLastError());
+    rc = -1;
+    goto EXIT;
+  }
+
+  if (WaitCommEvent(hdl, &dwEventMask, NULL) == FALSE)
+  {
+    fprintf(stderr, "WaitCommEvent has failed, error = %d\n", GetLastError());
+    rc = -1;
+    goto EXIT;
+  }
+
 
   ntoread = count;
   nread = 0;
