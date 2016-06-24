@@ -10,6 +10,8 @@
 
 #if WIN
 #  include <windows.h>
+#  include <string.h>
+#  include <malloc.h>
 #endif
 
 #define SERIAL_SRC 1
@@ -144,13 +146,26 @@ int open_serial(char *serialport, SERHDL *hdl)
   int rc;
   DCB dcb;
   COMMTIMEOUTS timeouts;
+  unsigned char *windows_serialport;
+#define DEVICE_PREFIX "\\\\.\\" 
 
-  if ((*hdl = CreateFile(serialport, GENERIC_READ|GENERIC_WRITE, 0, NULL,
-                         OPEN_EXISTING, 0, NULL)) ==
-      INVALID_HANDLE_VALUE)
+  windows_serialport = calloc(strlen(serialport) + 
+                              strlen(DEVICE_PREFIX) + 1, sizeof(unsigned char));
+  if (windows_serialport == NULL)
   {
     rc = RET_SERIAL_ERR_OPEN;
     goto EXIT;
+  }
+
+  strcpy(windows_serialport, DEVICE_PREFIX);
+  strncpy(windows_serialport + strlen(DEVICE_PREFIX), serialport,
+          strlen("comxx"));
+
+  if ((*hdl = CreateFile(windows_serialport, GENERIC_READ | GENERIC_WRITE, 0,
+                         NULL, OPEN_EXISTING, 0, NULL)) == INVALID_HANDLE_VALUE)
+  {
+    rc = RET_SERIAL_ERR_OPEN;
+    goto FREE_EXIT;
   }
  
   /* now set 38400,8,N,1 */
@@ -160,7 +175,7 @@ int open_serial(char *serialport, SERHDL *hdl)
   {
     CloseHandle(*hdl);
     rc = RET_SERIAL_ERR_SETATTR;
-    goto EXIT;
+    goto FREE_EXIT;
   }
 
   dcb.BaudRate = CBR_38400;
@@ -171,7 +186,7 @@ int open_serial(char *serialport, SERHDL *hdl)
   {
     CloseHandle(*hdl);
     rc = RET_SERIAL_ERR_SETATTR;
-    goto EXIT;
+    goto FREE_EXIT;
   }
 
   // Set COM port timeout settings
@@ -184,10 +199,13 @@ int open_serial(char *serialport, SERHDL *hdl)
   {
     CloseHandle(*hdl);
     rc = RET_SERIAL_ERR_SETATTR;
-    goto EXIT;
+    goto FREE_EXIT;
   }
 
   rc = RET_SERIAL_OK;
+
+FREE_EXIT:
+  free(windows_serialport); 
 
 EXIT:
   return rc;
@@ -210,36 +228,16 @@ int read_serial(SERHDL hdl, unsigned char *buf, int count)
   int rc;
   DWORD ntoread;
   DWORD nread;
-  DWORD dwEventMask;
-
-  if (SetCommMask(hdl, EV_RXCHAR) == FALSE)
-  {
-    fprintf(stderr, "SetCommMask has failed, error = %d\n", GetLastError());
-    rc = -1;
-    goto EXIT;
-  }
-
-  if (WaitCommEvent(hdl, &dwEventMask, NULL) == FALSE)
-  {
-    fprintf(stderr, "WaitCommEvent has failed, error = %d\n", GetLastError());
-    rc = -1;
-    goto EXIT;
-  }
-
 
   ntoread = count;
   nread = 0;
-  while (ntoread - nread)
+  if (ReadFile(hdl, buf, ntoread, &nread, NULL) == FALSE)
   {
-    if (ReadFile(hdl, buf + nread, ntoread, &nread, NULL) == FALSE)
-    {
-      rc = -1;
-      goto EXIT;
-    }
-    ntoread -= nread;
+    rc = -1;
+    goto EXIT;
   }
   
-  rc = count;
+  rc = nread;
 
 EXIT:
   return rc;
