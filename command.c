@@ -48,8 +48,8 @@ int get_firmwareversion(SERHDL hdl, int myargc, char **myargv)
     goto EXIT;
   }
   
-  printf("Firmware version: %x%x.%x%x.%x%x\n", response[4], response[5],
-         response[6], response[7], response[8], response[9]); 
+  printf("Firmware version: %d.%d.%d\n", response[4] * 256 + response[5],
+         response[6] * 256 + response[7], response[8] * 256 + response[9]); 
 
 EXIT:
   return rc;
@@ -476,7 +476,7 @@ static int receive_response(SERHDL hdl, unsigned char *response, int rsplen)
   int rc;
   
   rc = read_serial(hdl, response, rsplen);
-  if (rc == -1)
+  if ( (rc == -1) || (rc != rsplen) )
   {
     rc = RET_COMMAND_ERR_READ;
     goto EXIT;
