@@ -26,7 +26,6 @@ int read_patternfile(FILE *handle, unsigned char *linevalue)
 {
 #define MAX_LINE (1024)
   int rc;
-  size_t nchar;
   int i;
   char buf[MAX_LINE];
 

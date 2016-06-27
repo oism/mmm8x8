@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include <serial.h>
 #include <pattern.h>
@@ -21,8 +22,8 @@ static int send_command(SERHDL hdl, char command, int nparam,
 static int receive_response(SERHDL hdl, unsigned char *response, int rsplen);
 static int write_serial_with_escape(SERHDL hdl, unsigned char byte,
                                     unsigned short *crc16);
-static write_and_crc_byte(SERHDL hdl, unsigned char byte,
-                          unsigned short *crc16);
+static int write_and_crc_byte(SERHDL hdl, unsigned char byte,
+                              unsigned short *crc16);
 
 static int read_one_pattern(FILE *patternfile, unsigned char *pattern);
 
@@ -64,7 +65,7 @@ int display_text(SERHDL hdl, int myargc, char **myargv)
   int textlen;
 
   textlen = strlen(myargv[0]);
-  rc = send_command(hdl, 'E', textlen, myargv[0]);
+  rc = send_command(hdl, 'E', textlen, (unsigned char *) myargv[0]);
   if (rc != RET_COMMAND_OK) 
   {
     fprintf(stderr, "sending command displaytext has failed.\n");
@@ -92,7 +93,7 @@ int store_text(SERHDL hdl, int myargc, char **myargv)
   int textlen;
 
   textlen = strlen(myargv[0]);
-  rc = send_command(hdl, 'J', textlen, myargv[0]);
+  rc = send_command(hdl, 'J', textlen, (unsigned char *) myargv[0]);
   if (rc != RET_COMMAND_OK) 
   {
     fprintf(stderr, "sending command storetext has failed.\n");
@@ -146,9 +147,6 @@ int display_pattern(SERHDL hdl, int myargc, char **myargv)
 #define CMD_DISPLAY_PATTERN_RSP_LEN (6)
   unsigned char response[CMD_DISPLAY_PATTERN_RSP_LEN];
   FILE *patternfile;
-  int lines;
-  int columns;
-  unsigned char linepattern;
   unsigned char pattern[LINES_PER_PATTERN];
   
   if ((rc = open_patternfile(myargv[0], &patternfile)) != RET_PATTERN_OK)
@@ -344,6 +342,20 @@ EXIT:
 }
 
 
+int exe_factoryreset(SERHDL hdl, int myargc, char **myargv)
+{
+  int rc;
+
+  rc = send_command(hdl, 'X', 0, NULL);
+  if (rc != RET_COMMAND_OK) 
+  {
+    fprintf(stderr, "sending command factoryreset has failed.\n");
+  }
+  
+  return rc;
+}
+
+
 static int send_command(SERHDL hdl, char command, int nparam,
                         unsigned char *params)
 {
@@ -353,7 +365,6 @@ static int send_command(SERHDL hdl, char command, int nparam,
   unsigned char length_low;
   unsigned short crc16;
   int i;
-  unsigned char escape;
 
   /* set initial value for crc16 computation */
   crc16 = INITIAL_VALUE;
@@ -457,7 +468,8 @@ EXIT:
 }
 
 
-static write_and_crc_byte(SERHDL hdl, unsigned char byte, unsigned short *crc16)
+static int write_and_crc_byte(SERHDL hdl, unsigned char byte,
+                              unsigned short *crc16)
 {
   int rc;
 

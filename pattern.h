@@ -12,6 +12,10 @@
 # define EXTERN extern
 #endif
 
+EXTERN int open_patternfile(char *path, FILE **handle);
+EXTERN int read_patternfile(FILE *handle, unsigned char *linevalue);
+EXTERN int close_patternfile(FILE *handle);
+
 #undef EXTERN
 
 #endif

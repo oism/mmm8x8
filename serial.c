@@ -6,6 +6,7 @@
 #  include <termios.h>
 #  include <sys/select.h>
 #  include <errno.h>
+#  include <unistd.h>
 #endif
 
 #if WIN

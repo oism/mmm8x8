@@ -21,6 +21,7 @@ EXTERN int store_pattern(SERHDL hdl, int myargc, char **myargv);
 EXTERN int set_normalmode(SERHDL hdl, int myargc, char **myargv);
 EXTERN int set_textmode(SERHDL hdl, int myargc, char **myargv);
 EXTERN int set_patternmode(SERHDL hdl, int myargc, char **myargv);
+EXTERN int exe_factoryreset(SERHDL hdl, int myargc, char **myargv);
 
 #undef EXTERN
 

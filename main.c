@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 #include <serial.h>
 #include <command.h>
@@ -17,6 +18,7 @@
 #define RET_ERR_SET_NORMALMODE      (8)
 #define RET_ERR_SET_TEXTMODE        (9)
 #define RET_ERR_SET_PATTERNMODE     (10)
+#define RET_ERR_EXE_FACTORYRESET    (11)
 
 #define CMD_NOMATCH (0)
 
@@ -49,6 +51,7 @@ static CMD cmd_table[] =
   { "setnormalmode",   0,   set_normalmode,      RET_ERR_SET_NORMALMODE },
   { "settextmode",     0,   set_textmode,        RET_ERR_SET_TEXTMODE },
   { "setpatternmode",  0,   set_patternmode,     RET_ERR_SET_PATTERNMODE },
+  { "factoryreset",    0,   exe_factoryreset,    RET_ERR_EXE_FACTORYRESET },
 };
 
 
@@ -128,4 +131,5 @@ static void print_usage(void)
   fprintf(stderr, "       mmm8x8 <serial device> setnormalmode\n");
   fprintf(stderr, "       mmm8x8 <serial device> settextmode\n");
   fprintf(stderr, "       mmm8x8 <serial device> setpatternmode\n");
+  fprintf(stderr, "       mmm8x8 <serial device> factoryreset\n");
 }
