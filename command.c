@@ -13,6 +13,7 @@
 #define STX 0x02
 #define ESC 0x10
 #define FLAG 0x80
+#define NAK 0x15
 
 #define LINES_PER_PATTERN (8)
 #define COLUMNS_PER_PATTERN (8)
@@ -65,7 +66,7 @@ int display_text(SERHDL hdl, int myargc, char **myargv)
   int textlen;
 
   textlen = strlen(myargv[0]);
-  rc = send_command(hdl, 'E', textlen, (unsigned char *) myargv[0]);
+  rc = send_command(hdl, 'E', textlen, (unsigned char *) myargv[0]); 
   if (rc != RET_COMMAND_OK) 
   {
     fprintf(stderr, "sending command displaytext has failed.\n");
@@ -250,8 +251,15 @@ int store_pattern(SERHDL hdl, int myargc, char **myargv)
     rc = receive_response(hdl, response, CMD_STORE_PATTERN_RSP_LEN);
     if (rc != RET_COMMAND_OK) 
     {
-      fprintf(stderr, "receiving response of command storepattern "
-                      "has failed.\n");
+      if (rc == RET_COMMAND_ERR_NAK)
+      {
+        fprintf(stderr, "storage for patterns is exhausted.\n");
+      }
+      else
+      {
+        fprintf(stderr, "receiving response of command storepattern "
+                        "has failed.\n");
+      }
       goto CLOSE_EXIT;
     }
   }
@@ -364,6 +372,7 @@ static int send_command(SERHDL hdl, char command, int nparam,
   unsigned char length_high;
   unsigned char length_low;
   unsigned short crc16;
+  unsigned short dummy;
   int i;
 
   /* set initial value for crc16 computation */
@@ -419,8 +428,14 @@ static int send_command(SERHDL hdl, char command, int nparam,
   /* write checksum CRC16 */
   checksum[0] = (crc16 >> 8) & 0xff;
   checksum[1] = crc16 & 0xff;
-  rc = write_serial(hdl, checksum, 2); 
-  if (rc != 2)
+  rc = write_serial_with_escape(hdl, checksum[0], &dummy); 
+  if (rc != 1)
+  {
+    rc = RET_COMMAND_ERR_WRITE;
+    goto EXIT;
+  }
+  rc = write_serial_with_escape(hdl, checksum[1], &dummy); 
+  if (rc != 1)
   {
     rc = RET_COMMAND_ERR_WRITE;
     goto EXIT;
@@ -486,6 +501,7 @@ static int write_and_crc_byte(SERHDL hdl, unsigned char byte,
 static int receive_response(SERHDL hdl, unsigned char *response, int rsplen)
 {
   int rc;
+  int i;
   
   rc = read_serial(hdl, response, rsplen);
   if ( (rc == -1) || (rc != rsplen) )
@@ -493,17 +509,19 @@ static int receive_response(SERHDL hdl, unsigned char *response, int rsplen)
     rc = RET_COMMAND_ERR_READ;
     goto EXIT;
   }
-  else
-  {
-    int i;
     
-    printf("rsp: ");
-    for (i = 0; i < rsplen; i++)
-    {
-      printf("%02X ", *(response + i));
-    }
-    printf("\n");
+  if ( (rsplen >= 4) && (response[3] == NAK) )
+  {
+    rc = RET_COMMAND_ERR_NAK;
+    goto EXIT;
   }
+ 
+  printf("rsp: ");
+  for (i = 0; i < rsplen; i++)
+  {
+    printf("%02X ", *(response + i));
+  }
+  printf("\n");
 
   rc = RET_COMMAND_OK;
 
